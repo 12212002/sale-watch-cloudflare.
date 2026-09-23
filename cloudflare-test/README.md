@@ -62,3 +62,7 @@ Official sources checked September 23, 2026:
 ## Local developer commands
 
 Requires Node 24+. `npm ci`, `npm test`, `npm run build` (dry run), `npm run dev` (local preview). `npm run deploy` changes the existing remote Worker but sends no email itself. `schema.sql` is retained for isolated local testing, not as an update instruction for the existing remote database.
+
+## First build after connecting GitHub
+
+The production build must use the `cloudflare-test` root directory and `main` branch. This documentation update requests the first build after those settings were corrected. A GitHub commit alone is not proof of deployment: verify Version 0.1.2 on the live test page before running the native diagnostic.
