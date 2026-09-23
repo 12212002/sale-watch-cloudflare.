@@ -1,35 +1,43 @@
 npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
 
-> sale-watch-cloudflare-test@0.1.3 test
+> sale-watch-cloudflare-test@0.1.4 test
 > node --test tests/*.test.js
 
-✔ native probe uses only fixed TLS endpoint, handles fragmented multiline greeting, closes socket (4.846175ms)
-✔ native probe sanitizes connection failures and closes socket (0.703676ms)
-✔ native probe bounds total wait even when greeting never arrives (10.449623ms)
-✔ native probe rejects incomplete, oversized and non-220 greetings (1.197489ms)
-✔ native route needs a valid test key, but no Gmail secrets; ledger survives retries (11.228153ms)
-✔ native login authenticates only on TLS and never sends a message; replies may be fragmented (9.766903ms)
-✔ Gmail authentication rejection is distinct from connection failure and strips provider text (0.994768ms)
-✔ native login will not submit credentials unless server advertises PLAIN (0.777571ms)
-✔ native login validates configuration before making any connection (0.21765ms)
-✔ native login bounds waiting and closes socket without further commands (10.669345ms)
-✔ native login rejects malformed multiline responses and oversize replies (0.99383ms)
-✔ native login route retains original email ledger, rejects unauthorized calls and duplicate login tests (7.683857ms)
-✔ unset token locks all test routes (5.726048ms)
-✔ incorrect token cannot trigger a request (1.050127ms)
-✔ foreign origin cannot trigger a request (1.143833ms)
-✔ email remains off without configured credentials (1.426967ms)
-✔ durable claim prevents concurrent and later retries (1.50015ms)
-✔ Gmail validation excludes headers and invalid passwords (0.20591ms)
-✔ safe errors never expose SMTP details or secrets (0.282124ms)
-✔ results require authentication and read persisted data (1.695216ms)
-✔ diagnostic uses verify only, both encrypted ports, closes clients (1.487657ms)
-✔ diagnostic strips provider text and unrecognized fields (0.445978ms)
-ℹ tests 22
+✔ native probe uses only fixed TLS endpoint, handles fragmented multiline greeting, closes socket (6.079073ms)
+✔ native probe sanitizes connection failures and closes socket (0.391603ms)
+✔ native probe bounds total wait even when greeting never arrives (11.526195ms)
+✔ native probe rejects incomplete, oversized and non-220 greetings (1.367357ms)
+✔ native route needs a valid test key, but no Gmail secrets; ledger survives retries (15.244341ms)
+✔ native test sends exactly one correctly terminated message only to configured owner after TLS login (14.805276ms)
+✔ existing login-only entry point cannot be switched into email mode by options (1.416237ms)
+✔ rejected authentication or recipient never transmits message content (1.848244ms)
+✔ timeout after message submission remains unknown and performs no retry (20.218721ms)
+✔ explicit final SMTP rejection is not reported as accepted (1.292431ms)
+✔ native send requires confirmation and successful saved login, rejects unauthorized calls (7.635387ms)
+✔ native email ledger prevents duplicate sends and preserves every earlier record (3.837945ms)
+✔ an interrupted native attempt stays blocked even if no final result was saved (0.763327ms)
+✔ native login authenticates only on TLS and never sends a message; replies may be fragmented (10.941226ms)
+✔ Gmail authentication rejection is distinct from connection failure and strips provider text (1.555214ms)
+✔ native login will not submit credentials unless server advertises PLAIN (1.485139ms)
+✔ native login validates configuration before making any connection (0.239029ms)
+✔ native login bounds waiting and closes socket without further commands (11.098081ms)
+✔ native login rejects malformed multiline responses and oversize replies (1.982048ms)
+✔ native login route retains original email ledger, rejects unauthorized calls and duplicate login tests (8.69607ms)
+✔ unset token locks all test routes (6.666785ms)
+✔ incorrect token cannot trigger a request (1.266858ms)
+✔ foreign origin cannot trigger a request (1.826937ms)
+✔ email remains off without configured credentials (2.074132ms)
+✔ durable claim prevents concurrent and later retries (2.089373ms)
+✔ Gmail validation excludes headers and invalid passwords (0.311117ms)
+✔ safe errors never expose SMTP details or secrets (0.592857ms)
+✔ results require authentication and read persisted data (2.385589ms)
+✔ diagnostic uses verify only, both encrypted ports, closes clients (1.400548ms)
+✔ diagnostic strips provider text and unrecognized fields (0.576659ms)
+ℹ tests 30
 ℹ suites 0
-ℹ pass 22
+ℹ pass 30
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 246.344272
+ℹ duration_ms 282.093563

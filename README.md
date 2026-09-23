@@ -4,18 +4,18 @@ Continuation of the two supplied Sale Watch projects. No application restart or 
 
 | Folder | Purpose |
 |---|---|
-| [cloudflare-test](cloudflare-test/README.md) | Version 0.1.3 feasibility test; only this folder deploys to the existing test Worker |
+| [cloudflare-test](cloudflare-test/README.md) | Version 0.1.4 feasibility test; only this folder deploys to the existing test Worker |
 | [local-app](local-app/README.md) | Original 0.5.0 Node/SQLite app, preserved with its source, tests, assets and vendored dependencies |
 
 ## Next step
 
-Connect the existing `sale-watch-free-test` Worker to this repository using [these settings](cloudflare-test/README.md#update-the-existing-worker-through-github). Then obtain the native connection result before choosing an email fix. Nothing sends an email on build or deployment. No cron is enabled.
+Connect the existing `sale-watch-free-test` Worker to this repository using [these settings](cloudflare-test/README.md#update-the-existing-worker-through-github). Native TLS and login succeeded in owner-reported live tests. Next, explicitly send the one-time native email and check Inbox/Spam. Nothing sends an email on build or deployment. No cron is enabled.
 
 ## Verified locally
 
 - Main app: 177/177 offline tests passed.
-- Updated Cloudflare test: 22/22 offline tests passed; Wrangler dry-run build passed.
-- The owner reported a successful live native TLS greeting. Native login, email delivery, and the full hosted application are not yet verified.
+- Updated Cloudflare test: 30/30 offline tests passed; Wrangler dry-run build passed.
+- The owner reported a successful live native TLS greeting. The owner also reported successful native login. Email delivery and the full hosted application are not yet verified.
 
 The public repository excludes local databases, backups, credentials and archived browser captures. Historical documentation in local-app refers to some captures retained in the original supplied ZIP; it is not fresh live evidence. Application code and assets remain intact.
 

@@ -1,5 +1,5 @@
 import {diagnose} from './diagnostics.js';
-import {probeNativeLogin} from './native-login.js';
+import {probeNativeLogin,sendNativeTestEmail} from './native-login.js';
 import {probeNativeConnection} from './native-connection.js';
 import nodemailer from '../vendor/nodemailer/dist/esm/nodemailer.js';
 import {inspectHollister} from './adapters/hollister.js';
@@ -28,6 +28,15 @@ export function createWorker({nativeConnect = async () => (await import('cloudfl
     if(!await claim(env.DB,'native-login-v1'))return json({error:'Native login test was already attempted. Use Show saved results.'},409);
     const connect=await nativeConnect();
     return json(await finish(env.DB,'native-login-v1',await probeNativeLogin(connect,env)));
+   }
+   if(u.pathname==='/native-email'){
+    if(request.headers.get('X-Confirm-Test-Email')!=='send-one-new-test')return json({error:'Confirm the clearly labelled new test email button first. No email sent.'},400);
+    if(!validMail(env))return json({error:'Existing Gmail secrets are missing or invalid.'},503);
+    const prior=(await env.DB.prepare('SELECT result FROM attempts WHERE kind=?').bind('native-login-v1').all()).results;
+    if(!prior.length||JSON.parse(prior[0].result).state!=='NATIVE_LOGIN_OK')return json({error:'Complete the native login test successfully first. No email sent.'},409);
+    if(!await claim(env.DB,'native-email-v1'))return json({error:'The new native email was already attempted. Check inbox/spam and Show saved results. No automatic resend.'},409);
+    const connect=await nativeConnect();
+    return json(await finish(env.DB,'native-email-v1',await sendNativeTestEmail(connect,env)));
    }
    if(u.pathname==='/price'){
     if(!await claim(env.DB,'price'))return json({error:'This one-time price test already ran. Use Show results.'},409);

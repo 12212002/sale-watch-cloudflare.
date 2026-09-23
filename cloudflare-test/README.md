@@ -1,9 +1,19 @@
-# Sale Watch Cloudflare feasibility test 0.1.3
+# Sale Watch Cloudflare feasibility test 0.1.4
 
 This is a diagnostic prototype, not the complete hosted Sale Watch application.
 No scheduled checks are enabled. Keep the main local application separately.
 
-## Update 0.1.3 — native login diagnostic
+## Update 0.1.4 — one new real email test
+
+The owner reported NATIVE_LOGIN_OK with SMTP 235 from the deployed 0.1.3 probe. Native TLS and Gmail authentication have now succeeded for this account. Inbox delivery remains unverified.
+
+The new **Send ONE new test email via native connection to my Gmail** button requires confirmation and a saved successful native login. It sends a fixed, plainly labelled test message only to the configured sender's own Gmail inbox. No recipient, subject or message content can be supplied by a visitor. It reuses the existing Gmail secrets.
+
+The durable native-email-v1 attempt record is created before connecting. It permits at most one attempt, including concurrent requests. It never clears or retries the earlier email record. Interrupted submission returns UNCONFIRMED and must not be automatically resent. SMTP_ACCEPTED means Gmail accepted the message, not that it appeared in the inbox. The login-only and greeting-only buttons remain unable to send email.
+
+30 offline tests pass with simulated SMTP servers. The main local application is unchanged. Deployment and the new email delivery are not implied by offline tests. This remains a feasibility test with no scheduler and no new paid service.
+
+## Previous update 0.1.3 — native login diagnostic
 
 The owner reported SMTP_GREETING_OK on the deployed 0.1.2 native socket probe: TLS and the Gmail greeting succeeded. This narrows the previous Nodemailer connection-time failure but does not identify its exact cause.
 
@@ -37,12 +47,12 @@ Stay on Free; do not enter a credit card or enable a paid service. If the accoun
 
 ## Obtain the result
 
-1. Open the existing test website and check that it shows Version 0.1.3.
+1. Open the existing test website and check that it shows Version 0.1.4.
 2. Enter the existing private test key only on that website.
-3. Click **Test Gmail login via native connection (no email)** once.
-4. Share only the displayed result, without the key.
+3. Click **Send ONE new test email via native connection to my Gmail** once and confirm. This sends a real new message.
+4. Share only the displayed result, without the key, and say whether the message appeared in Inbox or Spam. Look for subject: Sale Watch - native Cloudflare email test.
 
-If interrupted, use **Show saved results**. A STARTED record is not success and is not automatically reset. The separate **Send one test email** button sends a real email and retains its original one-attempt ledger. This update does not authorize or trigger a retry.
+If interrupted, use **Show saved results**. A STARTED record is not success and is not automatically reset. The new native-email-v1 test is a separate, explicitly confirmed attempt. Earlier attempt records stay intact; do not reset them. The former Nodemailer email button is no longer shown.
 
 ## Evidence as of September 23, 2026
 
