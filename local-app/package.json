@@ -1,0 +1,16 @@
+{
+  "name": "sale-watch",
+  "version": "0.5.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "test": "node --test tests/*.test.js",
+    "worker": "node src/worker.js --once",
+    "backup": "node scripts/backup.mjs",
+    "setup-email": "node scripts/setup-email.mjs"
+  }
+}

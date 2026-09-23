@@ -1,0 +1,19 @@
+{
+  "name": "sale-watch-cloudflare-test",
+  "private": true,
+  "version": "0.1.2",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "dev": "wrangler dev",
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "check": "npm test && npm run build"
+  },
+  "devDependencies": {
+    "wrangler": "4.136.3"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  }
+}

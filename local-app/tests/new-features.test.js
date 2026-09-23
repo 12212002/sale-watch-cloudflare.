@@ -1,0 +1,20 @@
+import {test} from 'node:test';import assert from 'node:assert/strict';
+import {openDB,addTrack,addVerifiedTrack,resolveTrack,tracks,record} from '../src/db.js';
+import {register,session,authenticate,changePassword,login} from '../src/auth.js';
+import {productImage} from '../src/adapters/images.js';
+const observation={state:'VERIFIED',retailer:'lisa-gozlan',productId:'123',variantId:'456',seller:'Lisa Gozlan',currency:'CAD',cents:12000,available:true,title:'Bracelet',variant:'Gold / Small',signals:[{source:'json',kind:'selling-price',productId:'123',variantId:'456',currency:'CAD',cents:12000}]};
+test('saved unverified link resolves without losing private fields or track ID',async()=>{
+ const db=openDB(':memory:');const a=await register(db,{email:'a@example.com',password:'correct-horse-password'});const b=await register(db,{email:'b@example.com',password:'correct-horse-password'});
+ const id=addTrack(db,a.id,{url:'https://www.lisagozlan.com/products/bracelet',title:'My bracelet',notes:'Birthday'});const other=addTrack(db,b.id,{url:'https://www.lisagozlan.com/products/bracelet'});
+ assert.throws(()=>resolveTrack(db,b.id,id,'https://www.lisagozlan.com/products/bracelet?variant=456',observation),/not found/);
+ assert.throws(()=>resolveTrack(db,a.id,id,'https://www.lisagozlan.com/products/other?variant=456',observation),/same saved/);
+ const pid=resolveTrack(db,a.id,id,'https://www.lisagozlan.com/products/bracelet?variant=456',observation);record(db,pid,observation);
+ const t=tracks(db,a.id)[0];assert.equal(t.id,id);assert.equal(t.title,'My bracelet');assert.equal(t.notes,'Birthday');assert.equal(t.current,12000);assert.equal(tracks(db,b.id)[0].id,other);assert.equal(tracks(db,b.id)[0].current,null);
+ assert.throws(()=>resolveTrack(db,a.id,id,t.url,observation),/already has/);db.close();
+});
+test('duplicate resolution rolls back and retains saved link',async()=>{const db=openDB(':memory:');const a=await register(db,{email:'a@example.com',password:'correct-horse-password'});addVerifiedTrack(db,a.id,{url:'https://www.lisagozlan.com/products/bracelet?variant=456'},observation);const id=addTrack(db,a.id,{url:'https://www.lisagozlan.com/products/bracelet'});assert.throws(()=>resolveTrack(db,a.id,id,'https://www.lisagozlan.com/products/bracelet?variant=456',observation),/already track/);assert.equal(tracks(db,a.id).length,2);db.close();});
+test('password change requires old password and revokes every previous session',async()=>{const db=openDB(':memory:');const a=await register(db,{email:'a@example.com',password:'correct-horse-password'});const old=session(db,a.id);await assert.rejects(changePassword(db,a.id,{currentPassword:'wrong',newPassword:'another-long-password'}));assert.ok(authenticate(db,'sw_session='+old.token));await changePassword(db,a.id,{currentPassword:'correct-horse-password',newPassword:'another-long-password'});assert.equal(authenticate(db,'sw_session='+old.token),null);await assert.rejects(login(db,{email:'a@example.com',password:'correct-horse-password'}));assert.equal(await login(db,{email:'a@example.com',password:'another-long-password'}),a.id);db.close();});
+test('automatic images restrict hosts, paths, file types and credentials',()=>{assert.match(productImage('//cdn.shopify.com/s/files/1/2/a.jpg'),/^https:\/\/cdn.shopify.com/);for(const u of ['https://evil.test/a.jpg','https://cdn.shopify.com@127.0.0.1/s/files/a.jpg','https://cdn.shopify.com/s/files/a.svg','http://cdn.shopify.com/s/files/a.jpg','https://cdn.shopify.com/admin/a.jpg'])assert.equal(productImage(u),'');});
+
+import {isChallenge} from '../src/adapters/challenge.js';
+test('challenge detection distinguishes ordinary storefront form protection from an access block',()=>{assert.equal(isChallenge('<script id="captcha-bootstrap">captcha; verify you are human;</script><h1>Product</h1>'),false);for(const html of ['<h1>Access Denied</h1>','<title>Security Check</title>','<div id="sec-if-cpt-container"></div>','<p>Please verify you are human.</p>'])assert.equal(isChallenge(html),true);});

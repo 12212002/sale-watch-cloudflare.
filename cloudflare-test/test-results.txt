@@ -1,0 +1,28 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> sale-watch-cloudflare-test@0.1.2 test
+> node --test tests/*.test.js
+
+✔ native probe uses only fixed TLS endpoint, handles fragmented multiline greeting, closes socket (8.258477ms)
+✔ native probe sanitizes connection failures and closes socket (0.765299ms)
+✔ native probe bounds total wait even when greeting never arrives (17.299593ms)
+✔ native probe rejects incomplete, oversized and non-220 greetings (3.79939ms)
+✔ native route needs a valid test key, but no Gmail secrets; ledger survives retries (11.5325ms)
+✔ unset token locks all test routes (6.413747ms)
+✔ incorrect token cannot trigger a request (1.686429ms)
+✔ foreign origin cannot trigger a request (0.649927ms)
+✔ email remains off without configured credentials (4.877401ms)
+✔ durable claim prevents concurrent and later retries (2.183963ms)
+✔ Gmail validation excludes headers and invalid passwords (1.444083ms)
+✔ safe errors never expose SMTP details or secrets (3.921064ms)
+✔ results require authentication and read persisted data (2.235967ms)
+✔ diagnostic uses verify only, both encrypted ports, closes clients (4.27128ms)
+✔ diagnostic strips provider text and unrecognized fields (0.406909ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 293.990263

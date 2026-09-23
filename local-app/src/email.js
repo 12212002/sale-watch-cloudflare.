@@ -1,0 +1,33 @@
+import {readFileSync} from 'node:fs';
+import {randomInt,randomUUID,timingSafeEqual} from 'node:crypto';
+import {hash,email,passwordHash} from './auth.js';
+import {timestamp,transaction,rateLimit} from './db.js';
+import nodemailer from '../vendor/nodemailer/dist/esm/nodemailer.js';
+export function mailSettings(db,user){const u=db.prepare('SELECT email,email_enabled FROM users WHERE id=?').get(user),p=db.prepare('SELECT address,min_percent FROM mail_preferences WHERE user_id=?').get(user);const address=p?.address||u.email;return {address,enabled:Boolean(u.email_enabled),verified:Boolean(db.prepare('SELECT 1 FROM verified_addresses WHERE user_id=? AND address=?').get(user,address)),minPercent:p?.min_percent||0};}
+export function loadGmail(db,{configPath='data/email.json',config,transport}={}){
+ if(!config){try{config=JSON.parse(readFileSync(configPath,'utf8'));}catch{return null;}}
+ if(config.enabled!==true)return null;
+ if(!/^[A-Za-z0-9._%+-]+@gmail\.com$/.test(config.address)||!/^[a-zA-Z0-9]{16}$/.test(config.appPassword||''))throw Error('Email configuration is invalid. Run the local email setup again.');
+ const client=transport||nodemailer.createTransport({host:'smtp.gmail.com',port:465,secure:true,auth:{user:config.address,pass:config.appPassword},connectionTimeout:10000,greetingTimeout:10000,socketTimeout:20000,tls:{minVersion:'TLSv1.2',rejectUnauthorized:true},disableFileAccess:true,disableUrlAccess:true});
+ return {freePlanVerified:true,atMostOnce:true,recipientOwnershipVerified:true,name:'Gmail',async send(message){
+  const reserved=transaction(db,()=>{const previous=db.prepare('SELECT state FROM mail_attempts WHERE id=?').get(message.idempotencyKey);if(previous)return {duplicate:true,accepted:previous.state==='ACCEPTED'};if(db.prepare('SELECT count(*) n FROM mail_attempts WHERE at>?').get(timestamp()-86400).n>=80)return {deferred:true};db.prepare("INSERT INTO mail_attempts VALUES(?,?,'STARTED')").run(message.idempotencyKey,timestamp());return {ready:true};});
+  if(!reserved.ready)return reserved;
+  try{const to=email(message.to);const r=await client.sendMail({from:{name:'Sale Watch',address:config.address},to:{address:to},subject:message.subject,text:message.text,html:message.html,messageId:'<'+message.idempotencyKey+'@sale-watch.local>',attachments:message.attachments||[],disableFileAccess:true,disableUrlAccess:true});const accepted=r.accepted?.some(v=>String(v).toLowerCase()===to);db.prepare('UPDATE mail_attempts SET state=? WHERE id=?').run(accepted?'ACCEPTED':'REJECTED',message.idempotencyKey);return {accepted:Boolean(accepted)};}catch{db.prepare("UPDATE mail_attempts SET state='UNKNOWN' WHERE id=?").run(message.idempotencyKey);return {accepted:false};}
+ }};
+}
+export async function sendVerification(db,provider,user,address,purpose='verify'){
+ if(!provider)throw Object.assign(Error('Email is not configured on this server.'),{status:409});address=email(address);rateLimit(db,'mail-code:'+user+':'+purpose,3,3600);rateLimit(db,'mail-address:'+address,5,3600);
+ const code=String(randomInt(10000000,100000000));db.prepare('INSERT INTO mail_codes VALUES(?,?,?,?,?,0) ON CONFLICT(user_id,purpose) DO UPDATE SET address=excluded.address,code=excluded.code,expires=excluded.expires,tries=0').run(user,purpose,address,hash(code),timestamp()+900);
+ const result=await provider.send({to:address,idempotencyKey:randomUUID(),subject:purpose==='reset'?'Reset your Sale Watch password':'Verify your Sale Watch email',text:`Your Sale Watch ${purpose==='reset'?'password reset':'email verification'} code is ${code}.\nIt expires in 15 minutes. If you did not request it, ignore this email.`,html:undefined});
+ if(!result.accepted){db.prepare('DELETE FROM mail_codes WHERE user_id=? AND purpose=? AND code=?').run(user,purpose,hash(code));throw Error(result.deferred?'Daily email limit reached. Try again later.':'Email was not confirmed as sent. Check server email setup before trying again.');}
+}
+function consumeCode(db,user,code,purpose){
+ const c=db.prepare('SELECT * FROM mail_codes WHERE user_id=? AND purpose=?').get(user,purpose);if(!c||c.expires<timestamp()||c.tries>=5)throw Error('Code is invalid or expired. Request a new one.');
+ db.prepare('UPDATE mail_codes SET tries=tries+1 WHERE user_id=? AND purpose=?').run(user,purpose);
+ const supplied=hash(String(code).trim());if(!timingSafeEqual(Buffer.from(supplied),Buffer.from(c.code)))throw Error('Code is invalid or expired.');
+ db.prepare('DELETE FROM mail_codes WHERE user_id=? AND purpose=?').run(user,purpose);return c;
+}
+export function verifyAddress(db,user,code){const c=consumeCode(db,user,code,'verify');transaction(db,()=>{db.prepare('INSERT OR IGNORE INTO verified_addresses VALUES(?,?)').run(user,c.address);db.prepare('INSERT INTO mail_preferences(user_id,address) VALUES(?,?) ON CONFLICT(user_id) DO UPDATE SET address=excluded.address').run(user,c.address);db.prepare('UPDATE users SET email_enabled=0 WHERE id=?').run(user);db.prepare("UPDATE outbox SET status='CANCELLED' WHERE user_id=? AND status IN ('NOT_CONFIGURED','RETRY')").run(user);});return mailSettings(db,user);}
+export function saveMailSettings(db,user,input){const pref=mailSettings(db,user);if(typeof input.enabled!=='boolean'||!Number.isFinite(input.minPercent)||input.minPercent<0||input.minPercent>100)throw Error('Use a minimum discount between 0 and 100%.');if(input.enabled&&!pref.verified)throw Error('Verify your notification email first.');transaction(db,()=>{db.prepare('INSERT INTO mail_preferences VALUES(?,?,?) ON CONFLICT(user_id) DO UPDATE SET min_percent=excluded.min_percent').run(user,pref.address,input.minPercent);db.prepare('UPDATE users SET email_enabled=? WHERE id=?').run(Number(input.enabled),user);if(!input.enabled)db.prepare("UPDATE outbox SET status='CANCELLED' WHERE user_id=? AND status IN ('NOT_CONFIGURED','RETRY')").run(user);});}
+export async function requestEmailReset(db,provider,address){address=email(address);const u=db.prepare('SELECT id FROM users WHERE email=?').get(address);if(!u||!db.prepare('SELECT 1 FROM verified_addresses WHERE user_id=? AND address=?').get(u.id,address))return;await sendVerification(db,provider,u.id,address,'reset');}
+export async function finishEmailReset(db,address,code,password){const u=db.prepare('SELECT id FROM users WHERE email=?').get(email(address));if(!u)throw Error('Code is invalid or expired.');const encoded=await passwordHash(password);consumeCode(db,u.id,code,'reset');transaction(db,()=>{db.prepare('UPDATE users SET password=? WHERE id=?').run(encoded,u.id);db.prepare('DELETE FROM sessions WHERE user_id=?').run(u.id);});}
