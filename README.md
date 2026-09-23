@@ -4,7 +4,7 @@ Continuation of the two supplied Sale Watch projects. No application restart or 
 
 | Folder | Purpose |
 |---|---|
-| [cloudflare-test](cloudflare-test/README.md) | Version 0.1.2 feasibility test; only this folder deploys to the existing test Worker |
+| [cloudflare-test](cloudflare-test/README.md) | Version 0.1.3 feasibility test; only this folder deploys to the existing test Worker |
 | [local-app](local-app/README.md) | Original 0.5.0 Node/SQLite app, preserved with its source, tests, assets and vendored dependencies |
 
 ## Next step
@@ -14,8 +14,8 @@ Connect the existing `sale-watch-free-test` Worker to this repository using [the
 ## Verified locally
 
 - Main app: 177/177 offline tests passed.
-- Updated Cloudflare test: 15/15 offline tests passed; Wrangler dry-run build passed.
-- Live email delivery, native probe execution, and the full hosted application are not yet verified.
+- Updated Cloudflare test: 22/22 offline tests passed; Wrangler dry-run build passed.
+- The owner reported a successful live native TLS greeting. Native login, email delivery, and the full hosted application are not yet verified.
 
 The public repository excludes local databases, backups, credentials and archived browser captures. Historical documentation in local-app refers to some captures retained in the original supplied ZIP; it is not fresh live evidence. Application code and assets remain intact.
 

@@ -1,4 +1,5 @@
 import {diagnose} from './diagnostics.js';
+import {probeNativeLogin} from './native-login.js';
 import {probeNativeConnection} from './native-connection.js';
 import nodemailer from '../vendor/nodemailer/dist/esm/nodemailer.js';
 import {inspectHollister} from './adapters/hollister.js';
@@ -21,6 +22,12 @@ export function createWorker({nativeConnect = async () => (await import('cloudfl
     if(!await claim(env.DB,'native-connection-v1'))return json({error:'The native connection probe was already attempted. Use Show saved results.'},409);
     const connect=await nativeConnect();
     return json(await finish(env.DB,'native-connection-v1',await probeNativeConnection(connect)));
+   }
+   if(u.pathname==='/native-login'){
+    if(!validMail(env))return json({error:'Existing Gmail secrets are missing or invalid. Do not paste them into chat.'},503);
+    if(!await claim(env.DB,'native-login-v1'))return json({error:'Native login test was already attempted. Use Show saved results.'},409);
+    const connect=await nativeConnect();
+    return json(await finish(env.DB,'native-login-v1',await probeNativeLogin(connect,env)));
    }
    if(u.pathname==='/price'){
     if(!await claim(env.DB,'price'))return json({error:'This one-time price test already ran. Use Show results.'},409);

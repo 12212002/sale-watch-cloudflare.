@@ -1,9 +1,17 @@
-# Sale Watch Cloudflare feasibility test 0.1.2
+# Sale Watch Cloudflare feasibility test 0.1.3
 
 This is a diagnostic prototype, not the complete hosted Sale Watch application.
 No scheduled checks are enabled. Keep the main local application separately.
 
-## What changed
+## Update 0.1.3 — native login diagnostic
+
+The owner reported SMTP_GREETING_OK on the deployed 0.1.2 native socket probe: TLS and the Gmail greeting succeeded. This narrows the previous Nodemailer connection-time failure but does not identify its exact cause.
+
+The new **Test Gmail login via native connection (no email)** button uses the existing Gmail secrets over native TLS on port 465. It checks the greeting and advertised AUTH PLAIN support, then authenticates and closes. It has no message-sending path. Its new native-login-v1 record prevents repeats without changing any earlier attempts. Raw replies, addresses and credentials are never returned.
+
+22 offline tests pass with simulated servers. Production login, actual email sending and inbox delivery remain untested. No email retry has been added. Keep using the existing secrets; no new credentials or services are required.
+
+## Changes in 0.1.2
 
 Added **Test direct Cloudflare connection (no password or email)**. This opens a native Cloudflare TLS socket to smtp.gmail.com:465 and reads a bounded SMTP greeting. It never writes commands, receives Gmail credentials, logs raw provider messages, or sends email. A new `native-connection-v1` ledger entry prevents repeat attempts; the existing price, email and connection-v1 entries are unchanged.
 
@@ -29,9 +37,9 @@ Stay on Free; do not enter a credit card or enable a paid service. If the accoun
 
 ## Obtain the result
 
-1. Open the existing test website and check that it shows Version 0.1.2.
+1. Open the existing test website and check that it shows Version 0.1.3.
 2. Enter the existing private test key only on that website.
-3. Click **Test direct Cloudflare connection (no password or email)** once.
+3. Click **Test Gmail login via native connection (no email)** once.
 4. Share only the displayed result, without the key.
 
 If interrupted, use **Show saved results**. A STARTED record is not success and is not automatically reset. The separate **Send one test email** button sends a real email and retains its original one-attempt ledger. This update does not authorize or trigger a retry.
